@@ -32,11 +32,6 @@ extern NSString *AnswerCellIdentifier;
 - (id)initWithStyle:(UITableViewStyle)style categories:(NSArray *)categoryList words:(NSArray *)wordList;
 - (IBAction)startNewTest:(id)sender;
 - (IBAction)startRetest:(id)sender;
-- (void)shuffleRemaining;
-- (void)showNextWord;
 - (void)advance:(NSTimer *)firedTimer;
-- (void)disableAnswers;
-- (void)enableAnswers;
-- (void)raiseCompletionModal;
 
 @end

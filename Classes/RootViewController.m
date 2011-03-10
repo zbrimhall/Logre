@@ -17,10 +17,41 @@ NSString *LCategory = @"LCategory";
 NSString *LWords = @"LWords";
 NSString *LWord = @"LWord";
 
+@interface RootViewController (Private)
+- (void)L_loadWordsAndCategories;
+@end
+
 @implementation RootViewController
 
 @synthesize categories;
 @synthesize words;
+
+#pragma mark -
+#pragma mark Setup/Teardown
+
+- (void)dealloc {
+	[self.categories release];
+	[self.words release];
+	
+    [super dealloc];
+}
+
+- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation {
+    return (interfaceOrientation == UIInterfaceOrientationPortrait);
+}
+
+#pragma mark -
+#pragma mark View Lifecycle
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+	[self L_loadWordsAndCategories];
+	
+	self.title = @"Logre";
+}
+
+#pragma mark -
+#pragma mark Table View Data Source Methods
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
     return 2;
@@ -44,6 +75,12 @@ NSString *LWord = @"LWord";
     return cell;
 }
 
+- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
+	return section == 0 ? @"Activities" : @"Word Categories";
+}
+
+#pragma mark -
+#pragma mark Table View Delegate Methods
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     UIViewController *controller;
@@ -68,19 +105,18 @@ NSString *LWord = @"LWord";
 	[self.navigationController pushViewController:controller animated:YES];
 }
 
+@end
 
-- (void)viewDidLoad {
-    [super viewDidLoad];
-	[self loadWordsAndCategories];
-	
-	self.title = @"Logre";
-}
+#pragma mark -
+#pragma mark -
 
-- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
-	return section == 0 ? @"Activities" : @"Word Categories";
-}
+@implementation RootViewController (Private)
 
-- (void)loadWordsAndCategories {
+/**
+ * Load the list of words and word categories from the plists stored in the app
+ * bundle.
+ */
+- (void)L_loadWordsAndCategories {
 	NSString *path = [[NSBundle mainBundle] pathForResource:@"Logre" ofType:@"plist"];
 	NSDictionary *data = [NSDictionary dictionaryWithContentsOfFile:path];
 	
@@ -90,25 +126,4 @@ NSString *LWord = @"LWord";
 	self.words = [data objectForKey:LWords];
 }
 
-- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation {
-    // Return YES for supported orientations
-    return (interfaceOrientation == UIInterfaceOrientationPortrait);
-}
-
-
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning]; // Releases the view if it doesn't have a superview
-    // Release anything that's not essential, such as cached data
-}
-
-
-- (void)dealloc {
-	[self.categories release];
-	[self.words release];
-	
-    [super dealloc];
-}
-
-
 @end
-

@@ -23,6 +23,4 @@ extern NSString *LWord;
 @property (nonatomic, retain) NSArray *categories;
 @property (nonatomic, retain) NSArray *words;
 
-- (void)loadWordsAndCategories;
-
 @end

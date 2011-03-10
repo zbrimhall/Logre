@@ -15,16 +15,18 @@
 @synthesize window;
 @synthesize navigationController;
 
-
-- (void)applicationDidFinishLaunching:(UIApplication *)application {
-	[window addSubview:[navigationController view]];
-	[window makeKeyAndVisible];
-}
+#pragma mark -
+#pragma mark Setup/Teardown
 
 - (void)dealloc {
 	[navigationController release];
 	[window release];
 	[super dealloc];
+}
+
+- (void)applicationDidFinishLaunching:(UIApplication *)application {
+	[window addSubview:[navigationController view]];
+	[window makeKeyAndVisible];
 }
 
 @end

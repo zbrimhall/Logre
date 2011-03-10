@@ -16,10 +16,31 @@ const NSInteger LTestViewAnswerOptionCount = 6;
 NSString *QuestionCellIdentifier = @"QuestionCellIdentifier";
 NSString *AnswerCellIdentifier = @"AnswerCellIdentifier";
 
+@interface LTestViewController (Private)
+- (void)L_shuffleRemaining;
+- (void)L_showNextWord;
+- (void)L_disableAnswers;
+- (void)L_enableAnswers;
+- (void)L_raiseCompletionModal;
+@end
+
 @implementation LTestViewController
 
 @synthesize categories;
 @synthesize words;
+
+#pragma mark -
+#pragma mark Setup/Teardown
+
+- (void)dealloc {
+	[self.categories release];
+	[self.words release];
+	[correct release];
+	[incorrect release];
+	[remaining release];
+	
+    [super dealloc];
+}
 
 - (id)initWithStyle:(UITableViewStyle)style categories:(NSArray *)categoryList words:(NSArray *)wordList {
     if (!(self = [super initWithStyle:style]))
@@ -36,89 +57,59 @@ NSString *AnswerCellIdentifier = @"AnswerCellIdentifier";
     return self;
 }
 
+#pragma mark -
+#pragma mark View Lifecycle
+
 - (void)viewDidLoad {
 	[self.tableView setScrollEnabled:NO];
 	[self startNewTest:self];
 }
 
+#pragma mark -
+#pragma mark Actions
+
+/**
+ * Clear the answered and unanswered lists, shuffle the remaining words, and
+ * show the first one.
+ */
 - (IBAction)startNewTest:(id)sender {
 	[correct removeAllObjects];
 	[incorrect removeAllObjects];
 	[remaining addObjectsFromArray:self.words];
-	[self shuffleRemaining];
-	[self enableAnswers];
+	[self L_shuffleRemaining];
+	[self L_enableAnswers];
 	
-	[self showNextWord];
+	[self L_showNextWord];
 }
 
+/**
+ * Take the list of words that were answered incorrectly in the previous
+ * iteration of the test and use them as the new list of words to be tested.
+ * Shuffle them and show the first one.
+ */
 - (IBAction)startRetest:(id)sender {
 	[remaining addObjectsFromArray:incorrect];
 	[incorrect removeAllObjects];
-	[self shuffleRemaining];
-	[self enableAnswers];
+	[self L_shuffleRemaining];
+	[self L_enableAnswers];
 	
-	[self showNextWord];
+	[self L_showNextWord];
 }
 
-- (void)shuffleRemaining {
-	NSDictionary *current;
-	NSDictionary *replacement;
-	int newIndex;
-	int count = [remaining count];
+/**
+ * Show the next word in the unanswered queue.
+ */
+- (void)advance:(NSTimer *)firedTimer {
+	[advancementTimer invalidate];
+	advancementTimer = nil;
 	
-	srand((unsigned int)time(NULL));
-	
-	for(int index = 0; index < count; index++) {
-		newIndex = rand() % count;
-		
-		if(index == newIndex)
-			continue;
-		
-		current = [remaining objectAtIndex:index];
-		replacement = [remaining objectAtIndex:newIndex];
-		[remaining replaceObjectAtIndex:newIndex withObject:current];
-		[remaining replaceObjectAtIndex:index withObject:replacement];
-	}
+	[remaining removeLastObject];
+	[self L_enableAnswers];
+	[self L_showNextWord];
 }
 
-- (void)showNextWord {
-	int candidate;
-	int count;
-	BOOL good;
-	
-	if(![remaining count]) {
-		[self disableAnswers];
-		[self raiseCompletionModal];
-		
-		return;
-	}
-	
-	currentWord = [remaining lastObject];
-	[answerOptions removeAllObjects];
-	[answerOptions addObject:[currentWord objectForKey:LCategory]];
-	count = [self.categories count];
-	
-	srand((unsigned int)time(NULL));
-	
-	for(int i = 1; i < LTestViewAnswerOptionCount; i++) {
-		do {
-			candidate = rand() % count;
-			good = YES;
-			
-			for(int n = 0; n < i; n++) {
-				if([[answerOptions objectAtIndex:n] intValue] == candidate) {
-					good = NO;
-					break;
-				}
-			}
-		} while(!good);
-		
-		[answerOptions insertObject:[NSNumber numberWithInt:candidate] atIndex:i];
-	}
-	
-	[answerOptions sortUsingSelector:@selector(compare:)];
-	[self.tableView reloadData];
-}
+#pragma mark -
+#pragma mark Table View Data Source Methods
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
     return 2;
@@ -154,6 +145,9 @@ NSString *AnswerCellIdentifier = @"AnswerCellIdentifier";
 	return section == 0 ? @"Question" : @"Answer";
 }
 
+#pragma mark -
+#pragma mark Table View Delegate Methods
+
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
 	NSUInteger indices[2];
 	NSUInteger correctAnswer;
@@ -164,7 +158,7 @@ NSString *AnswerCellIdentifier = @"AnswerCellIdentifier";
 	if(indexPath.section == 0)
 		return;
 	
-	[self disableAnswers];
+	[self L_disableAnswers];
 	
 	correctAnswer = [[currentWord objectForKey:LCategory] intValue];
 	
@@ -194,38 +188,99 @@ NSString *AnswerCellIdentifier = @"AnswerCellIdentifier";
 		advancementTimer = [NSTimer scheduledTimerWithTimeInterval:2.0 target:self selector:@selector(advance:) userInfo:nil repeats:NO];
 }
 
-- (void)advance:(NSTimer *)firedTimer {
-	[advancementTimer invalidate];
-	advancementTimer = nil;
+@end
+
+#pragma mark -
+#pragma mark -
+
+@implementation LTestViewController (Private)
+
+/**
+ * Shuffle the list of remaining words.
+ */
+- (void)L_shuffleRemaining {
+	NSDictionary *current;
+	NSDictionary *replacement;
+	int newIndex;
+	int count = [remaining count];
 	
-	[remaining removeLastObject];
-	[self enableAnswers];
-	[self showNextWord];
+	srand((unsigned int)time(NULL));
+	
+	for(int index = 0; index < count; index++) {
+		newIndex = rand() % count;
+		
+		if(index == newIndex)
+			continue;
+		
+		current = [remaining objectAtIndex:index];
+		replacement = [remaining objectAtIndex:newIndex];
+		[remaining replaceObjectAtIndex:newIndex withObject:current];
+		[remaining replaceObjectAtIndex:index withObject:replacement];
+	}
 }
 
-- (void)disableAnswers {
+/**
+ * Load the view with the next word and six suitable answer options.
+ */
+- (void)L_showNextWord {
+	int candidate;
+	int count;
+	BOOL good;
+	
+	if(![remaining count]) {
+		[self L_disableAnswers];
+		[self L_raiseCompletionModal];
+		
+		return;
+	}
+	
+	currentWord = [remaining lastObject];
+	[answerOptions removeAllObjects];
+	[answerOptions addObject:[currentWord objectForKey:LCategory]];
+	count = [self.categories count];
+	
+	srand((unsigned int)time(NULL));
+	
+	for(int i = 1; i < LTestViewAnswerOptionCount; i++) {
+		do {
+			candidate = rand() % count;
+			good = YES;
+			
+			for(int n = 0; n < i; n++) {
+				if([[answerOptions objectAtIndex:n] intValue] == candidate) {
+					good = NO;
+					break;
+				}
+			}
+		} while(!good);
+		
+		[answerOptions insertObject:[NSNumber numberWithInt:candidate] atIndex:i];
+	}
+	
+	[answerOptions sortUsingSelector:@selector(compare:)];
+	[self.tableView reloadData];
+}
+
+/**
+ * Disable user interaction with the answers table.
+ */
+- (void)L_disableAnswers {
 	[self.tableView setUserInteractionEnabled:NO];
 }
 
-- (void)enableAnswers {
+/**
+ * Enable user interaction with the answers table.
+ */
+- (void)L_enableAnswers {
 	[self.tableView setUserInteractionEnabled:YES];
 }
 
-- (void)raiseCompletionModal {
+/**
+ * Raise the modal view that presents the completed test results.
+ */
+- (void)L_raiseCompletionModal {
 	LTestCompletionController *modal = [[[LTestCompletionController alloc] initWithNibName:@"LTestCompletionController" bundle:nil correct:correct incorrect:incorrect] autorelease];
 	[self.navigationController presentModalViewController:modal animated:YES];
 }
 
-- (void)dealloc {
-	[self.categories release];
-	[self.words release];
-	[correct release];
-	[incorrect release];
-	[remaining release];
-	
-    [super dealloc];
-}
-
-
 @end
-

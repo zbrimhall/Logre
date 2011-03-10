@@ -13,6 +13,14 @@
 
 @synthesize words;
 
+#pragma mark -
+#pragma mark Setup/Teardown
+
+- (void)dealloc {
+	[self.words release];
+    [super dealloc];
+}
+
 - (id)initWithStyle:(UITableViewStyle)style words:(NSArray *)wordList {
 	if(!(self = [super initWithStyle:style]))
 		return nil;
@@ -21,6 +29,9 @@
 	
 	return self;
 }
+
+#pragma mark -
+#pragma mark Table View Data Source Methods
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
     return 1;
@@ -44,16 +55,10 @@
     return cell;
 }
 
+#pragma mark -
+#pragma mark Table View Delegate Methods
+
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
-}
-
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
-}
-
-- (void)dealloc {
-	[self.words release];
-    [super dealloc];
 }
 
 

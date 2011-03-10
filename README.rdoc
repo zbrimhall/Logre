@@ -1,0 +1,12 @@
+= Logre
+
+Logre is an iPhone application that helps you prepare for the GRE vocabulary
+test by presenting a flash-card-style test that asks you to categorize words
+into different "meaning groups".  The meaning group approach to learning
+vocabulary follows Kaplan's own test preparation materials, and serves to reduce
+the amount of exacting detail you need to memorize to improve your chances of
+understanding how a word is being used in the context of a question sentence.
+
+Author:: Cody Brimhall (mailto:brimhall@somuchwit.com)
+Copyright:: Copyright (c) 2008 Cody Brimhall
+License:: Distributed under the terms of the MIT License

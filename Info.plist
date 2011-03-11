@@ -10,6 +10,10 @@
 	<string>${EXECUTABLE_NAME}</string>
 	<key>CFBundleIconFile</key>
 	<string>Chimp</string>
+	<key>CFBundleIconFiles</key>
+	<array>
+		<string>Chimp.png</string>
+	</array>
 	<key>CFBundleIdentifier</key>
 	<string>com.somuchwit.${PRODUCT_NAME:identifier}</string>
 	<key>CFBundleInfoDictionaryVersion</key>
